@@ -26,6 +26,8 @@
 
       include "lib/video_constants.asm"
       include "lib/video_screen.asm"
+      include "lib/video_sprite_1x1.asm"
+      include "lib/video_sprite_2x2.asm"
 
 dire    db 0
 posy    db 0
@@ -33,27 +35,51 @@ posx    db 0
 
 start:
 	call ClearScreen
+	
+	ld b,0
+	ld c,0
+	ld de,sprite3
+	call Draw2x2Sprite
+cuu:	jp cuu
+
+
 	SetTempColour INK_GREEN+BG_WHITE
-	PrintChar 'D'
-	PrintStringAt 5,0,string,string_size
-cu:
-	jp cu
+	PrintStringAt 5,0,string,string_size+20
+
+	ld hl,COLOUR_MEM
+	ld de,400
+	ld bc,COLOUR_MEM_SIZE
+oi:
+	ld a,(de)
+	and %00011000
+	or %00000111
+	ld a,INK_GREEN|BG_BLACK
+	ld (hl),a
+	inc hl
+	inc de
+	dec bc
+	ld a,b
+	or c
+	jp nz,oi
 
 loop:
-	halt
-	;call Clear_Screen_Fast
-
+	ld a,(dire)
+	cp 0
+	jp z,oioioi
+	ld de,sprite
+	jp draw
+oioioi:
+	ld de,sprite2
+draw:
 	ld a,(posx)
 	ld b,a
 	ld a,(posy)
 	ld c,a
-	ld de,sprite
-	call draw_1x1_sprite
-	;call draw_1x1_sprite_buffer
+	call Draw1x1Sprite
 	ld a,(posx)
 	inc a
 	ld (posx),a
-	cp 31
+	cp 32
 	jp Z,skip1
 	jp loop
 skip1:
@@ -61,32 +87,26 @@ skip1:
 	ld (posx),a
 	ld a,(posy)
 	inc a
-	cp 23
-	jp Z,end_test
+	cp 24
+	jp Z,after;end_test
 	ld (posy),a
 	jp loop
-	; animate position
-;	ld a,(dire)
-;	cp 0
-;	jp Z,incre
-;	ld a,(posy)
-;	dec a
-;	ld (posy),a
-;	cp 0
-;	jp NZ,after
-;	ld a,0
-;	ld (dire),a
-;	jp after
-;incre:
-;	ld a,(posy)
-;	inc a
-;	ld (posy),a
-;	cp 23
-;	jp NZ,after
-;	ld a,1
-;	ld (dire),a
 
 after:
+	halt
+	xor a
+	ld (posx),a
+	ld (posy),a
+
+	ld a,(dire)
+	cp 0
+	jp z,outro
+	ld a,0
+	ld (dire),a
+	jp loop
+outro:
+	ld a,1
+	ld (dire),a
 	jp loop
 
 end_test:
@@ -132,66 +152,6 @@ an_skip2:
 string db "PRESS ENTER"
 string_size equ $-string
 
-; 1x1 Sprite
-; de - sprite address
-; b,c - x,y (32x24)
-draw_1x1_sprite:
-	; is x greater than 31?
-	ld a,b
-	cp 32
-	jr NC,end_draw_1x1_sprite
-	; is y greater than 23?
-	ld a,c
-	cp 24
-	jp NC,end_draw_1x1_sprite
-	; calculate screen address
-	ld l,b	; set x
-	ld a,c
-	and %00011000
-	or %01000000
-	ld h,a ; set y (screen third)
-	ld a,c
-	and %00000111
-	rla
-	rla
-	rla
-	rla
-	rla
-	or l
-	ld l,a
-	; copy 8 lines
-	ld a,(de)
-	ld (hl),a
-	inc h
-	inc e
-	ld a,(de)
-	ld (hl),a
-	inc h
-	inc e
-	ld a,(de)
-	ld (hl),a
-	inc h
-	inc e
-	ld a,(de)
-	ld (hl),a
-	inc h
-	inc e
-	ld a,(de)
-	ld (hl),a
-	inc h
-	inc e
-	ld a,(de)
-	ld (hl),a
-	inc h
-	inc e
-	ld a,(de)
-	ld (hl),a
-	inc h
-	inc e
-	ld a,(de)
-	ld (hl),a
-end_draw_1x1_sprite:
-	ret
 
 draw_1x1_sprite_buffer:
 	; is x greater than 31?
@@ -203,7 +163,7 @@ draw_1x1_sprite_buffer:
 	cp 191
 	jp NC,end_draw_1x1_sprite_buffer
 	; calculate screen address
-	ld hl,BLANK_SCREEN
+	;ld hl,BLANK_SCREEN
 	ld a,b
 	rla
 	rla
@@ -260,7 +220,32 @@ sprite:
 	db %10111101
 	db %10000001
 	db %11111111
+sprite2:
+	db %00000000
+	db %01111110
+	db %01000010
+	db %01011010
+	db %01011010
+	db %01000010
+	db %01111110
+	db %00000000
 
-BLANK_SCREEN: DS 7000,%00011000
+sprite3:
+	db %11111111,%11111111
+	db %10000000,%00000001
+	db %10111111,%11111101
+	db %10100000,%00000101
+	db %10101111,%11110101
+	db %10101111,%11110101
+	db %10101100,%00110101
+	db %10101100,%00110101
+	db %10101100,%00110101
+	db %10101100,%00110101
+	db %10101111,%11110101
+	db %10101111,%11110101
+	db %10100000,%00000101
+	db %10111111,%11111101
+	db %10000000,%00000001
+	db %11111111,%11111111
 
 	end 08000h
