@@ -1,0 +1,7 @@
+asm/
+Assembly_z80.xml
+emu/
+*.tap
+tools/
+zeus.zip
+z80.chl
