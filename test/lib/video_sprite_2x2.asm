@@ -34,9 +34,9 @@ Draw2x2Sprite:
 	rla
 	or l
 	ld l,a
-	; copy 16 lines
-	ld b,16
-Draw2x2Sprite_loop:
+	; copy 8 lines
+	ld b,8
+Draw2x2Sprite_loop1:
 	ld a,(de)
 	ld (hl),a
 	inc l
@@ -46,7 +46,41 @@ Draw2x2Sprite_loop:
 	dec l
 	inc h
 	inc de
-	djnz Draw2x2Sprite_loop
+	djnz Draw2x2Sprite_loop1
+	; have we gone to the next screen third?
+	dec h
+	ld a,h
+	and %11111000
+	ld h,a
+	ld a,l
+	and %11100000
+	cp %11100000
+	jp nz,Draw2x2Sprite_skip
+	ld a,l
+	and %00011111
+	ld l,a
+	ld a,h
+	add a,%00001000
+	ld h,a
+	jp Draw2x2Sprite_skip2
+Draw2x2Sprite_skip:
+	ld a,l
+	add a,%00100000
+	ld l,a
+Draw2x2Sprite_skip2:
+	; copy the next 8 lines
+	ld b,8
+Draw2x2Sprite_loop2:
+	ld a,(de)
+	ld (hl),a
+	inc l
+	inc de
+	ld a,(de)
+	ld (hl),a
+	dec l
+	inc h
+	inc de
+	djnz Draw2x2Sprite_loop2
 Draw2x2Sprite_end:
 	ret
 
